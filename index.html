@@ -149,7 +149,7 @@
 <div class="sub">← → 방향키로 피하세요 · 시간이 지날수록 빨라집니다</div>
 
 <div class="hud">
-  <span class="score" id="hudScore">0.0s</span>
+  <span class="score" id="hudScore">0개</span>
   <span class="level" id="hudLevel">LV 1</span>
 </div>
 
@@ -165,7 +165,7 @@
 
   <div class="overlay hidden" id="overOverlay">
     <h2>게임 오버</h2>
-    <div class="final" id="finalScore">0.0s</div>
+    <div class="final" id="finalScore">0개</div>
     <input type="text" id="nameInput" maxlength="12" placeholder="닉네임 (12자 이내)">
     <div>
       <button id="submitBtn">랭킹 등록</button>
@@ -201,8 +201,8 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
-const PLAYER = { w: 32, h: 48, y: H - 60, speed: 320 }; // px/s
-let player, poops, elapsed, running, lastTime, spawnTimer, keys;
+const PLAYER = { w: 3, h: 6, y: H - 40, speed: 320 }; // px/s
+let player, poops, elapsed, running, lastTime, spawnTimer, keys, dodged;
 let showHitbox = false; // H 키로 토글
 
 // 💩 이모지의 실제 렌더링 픽셀 경계를 런타임에 측정
@@ -280,12 +280,13 @@ function playerBounds() {
 
 // 난이도 곡선: 시간(초) 기반
 function fallSpeed(t)     { return 160 + t * 14; }          // 낙하 속도 px/s
-function spawnInterval(t) { return Math.max(0.22, 0.9 - t * 0.018); } // 생성 간격 s
+function spawnInterval(t) { return Math.max(0.12, 0.3 - t * 0.006); } // 생성 간격 s
 function levelOf(t)       { return 1 + Math.floor(t / 10); }
 
 function reset() {
   player = { x: W / 2 - PLAYER.w / 2 };
   poops = [];
+  dodged = 0;
   elapsed = 0;
   spawnTimer = 0;
   keys = { left: false, right: false };
@@ -318,7 +319,11 @@ function update(dt) {
   for (const p of poops) {
     p.y += p.vy * dt;
   }
-  poops = poops.filter(p => p.y < H + p.size);
+  poops = poops.filter(p =>{
+    if (p.y < H + p.size) return true;
+    dodged++
+    return false;
+  });
 
   // 충돌 판정 — 보이는 것과 동일한 경계끼리 AABB 교차
   const pb = playerBounds();
@@ -332,7 +337,7 @@ function update(dt) {
   }
 
   // HUD
-  document.getElementById('hudScore').textContent = elapsed.toFixed(1) + 's';
+  document.getElementById('hudScore').textContent = dodged + '개';
   const lv = levelOf(elapsed);
   const lvEl = document.getElementById('hudLevel');
   if (lvEl.textContent !== 'LV ' + lv) {
@@ -416,7 +421,7 @@ function startGame() {
 function gameOver() {
   running = false;
   draw();
-  document.getElementById('finalScore').textContent = elapsed.toFixed(1) + 's';
+  document.getElementById('finalScore').textContent = dodged + '개';
   document.getElementById('submitMsg').textContent = supabaseReady ? '' : 'Supabase 미설정 — 랭킹 등록 불가';
   document.getElementById('submitBtn').disabled = !supabaseReady;
   document.getElementById('overOverlay').classList.remove('hidden');
@@ -468,7 +473,7 @@ async function fetchRanking() {
     }
     list.innerHTML = rows.map((r, i) =>
       `<li><span><span class="rank">${i + 1}</span>${escapeHtml(r.name)}</span>` +
-      `<span class="pts">${Number(r.score).toFixed(1)}s</span></li>`
+      `<span class="pts">${r.score}</span></li>`
     ).join('');
   } catch (err) {
     list.innerHTML = '<li class="empty">랭킹 로딩 실패 (' + err.message + ')</li>';
