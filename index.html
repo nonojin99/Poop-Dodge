@@ -496,7 +496,7 @@ async function submitScore() {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
       method: 'POST',
       headers: { ...sbHeaders, Prefer: 'return=minimal' },
-      body: JSON.stringify({ name, score: Number(elapsed.toFixed(1)) })
+      body: JSON.stringify({ name, score: dodged })
     });
     if (!res.ok) throw new Error(res.status);
     msg.textContent = '등록 완료! 🎉';
