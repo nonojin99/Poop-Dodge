@@ -495,7 +495,7 @@ async function fetchSeason1() {
     if (rows.length === 0) return;   // 기록 없으면 섹션 자체를 숨긴 채 유지
     document.getElementById('s1List').innerHTML = rows.map((r, i) =>
       `<li><span><span class="rank">${i + 1}</span>${escapeHtml(r.name)}</span>` +
-      `<span class="pts">${Number(r.score).toFixed(1)}s</span></li>`
+      `<span class="pts">${r.score}개</span></li>`
     ).join('');
     document.getElementById('s1Board').style.display = 'block';
   } catch (err) {
